@@ -85,15 +85,16 @@ int main(int argc, char *argv[]) {
         // Connect signals for console output
         QTextStream out(stdout);
         QObject::connect(&cli, &CliInterface::progressUpdated, [&out](int percentage) {
-            out << "Progress: " << percentage << "%\n";
+            // Pad with spaces to overwrite previous output (up to "Progress: 100%")
+            out << QString("Progress: %1%").arg(percentage, 3, 10, QChar(' ')) << "\r";
             out.flush();
         });
         QObject::connect(&cli, &CliInterface::statusChanged, [&out](const QString &status) {
-            out << status << "\n";
+            out << "\n" << status << "\n"; // Newline before and after status for clarity
             out.flush();
         });
         QObject::connect(&cli, &CliInterface::operationError, [&out](const QString &error) {
-            out << "Error: " << error << "\n";
+            out << "\nError: " << error << "\n";
             out.flush();
         });
 
