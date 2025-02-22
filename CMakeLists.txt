@@ -14,6 +14,8 @@ add_executable(${PROJECT_NAME}
     binarysplittercore.cpp
     binarysplittercore.h
     main.qml
+    cliinterface.h
+    cliinterface.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Quick Qt6::Widgets)
