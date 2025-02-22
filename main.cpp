@@ -7,8 +7,7 @@
 #include "cliinterface.h"
 
 int main(int argc, char *argv[]) {
-    // Initialize with QCoreApplication first to parse args
-    QCoreApplication coreApp(argc, argv);
+    // Avoid creating an application object until we know the mode
 
     // Set up command-line parser
     QCommandLineParser parser;
@@ -23,7 +22,7 @@ int main(int argc, char *argv[]) {
         "  GUI mode:\n"
         "    binarysplitter\n"
         );
-    parser.addHelpOption(); // Adds --help and -h automatically
+    parser.addHelpOption(); // Adds --help and -h
 
     // Define CLI mode option
     parser.addOption(QCommandLineOption("cli", "Run in command-line interface mode (non-GUI)"));
@@ -36,26 +35,31 @@ int main(int argc, char *argv[]) {
     parser.addOption(QCommandLineOption("auto-detect", "Auto-detect frame size using sync word"));
     parser.addOption(QCommandLineOption("sync-word", "Sync word in hex for auto-detection (default: 4711)", "hex"));
 
-    // Process arguments
-    parser.process(coreApp);
+    // Parse arguments manually without an application object
+    parser.parse(QCoreApplication::arguments());
 
-    // Check for help first
+    // Handle help option first
     if (parser.isSet("help")) {
-        parser.showHelp(0); // Exit with success code 0 after showing help
+        QTextStream out(stdout);
+        out << parser.helpText() << "\n";
+        return 0; // Exit after showing help
     }
 
     // Decide between CLI and GUI mode
     if (parser.isSet("cli")) {
+        // CLI mode: Create QCoreApplication
+        QCoreApplication app(argc, argv);
+
         CliInterface cli;
 
-        // Validate and set CLI properties
-        if (parser.isSet("input")) {
-            cli.setInputFile(parser.value("input"));
-        } else {
+        // Validate and set CLI options
+        if (!parser.isSet("input")) {
             QTextStream err(stderr);
             err << "Error: Input file is required in CLI mode. Use --input <file>\n";
-            parser.showHelp(1); // Exit with error code 1
+            err << parser.helpText() << "\n";
+            return 1; // Exit with error
         }
+        cli.setInputFile(parser.value("input"));
 
         if (parser.isSet("bulk-size")) {
             bool ok;
@@ -85,12 +89,11 @@ int main(int argc, char *argv[]) {
         // Connect signals for console output
         QTextStream out(stdout);
         QObject::connect(&cli, &CliInterface::progressUpdated, [&out](int percentage) {
-            // Pad with spaces to overwrite previous output (up to "Progress: 100%")
             out << QString("Progress: %1%").arg(percentage, 3, 10, QChar(' ')) << "\r";
             out.flush();
         });
         QObject::connect(&cli, &CliInterface::statusChanged, [&out](const QString &status) {
-            out << "\n" << status << "\n"; // Newline before and after status for clarity
+            out << "\n" << status << "\n";
             out.flush();
         });
         QObject::connect(&cli, &CliInterface::operationError, [&out](const QString &error) {
@@ -98,19 +101,19 @@ int main(int argc, char *argv[]) {
             out.flush();
         });
 
-        // Start splitting
+        // Start CLI operation
         cli.startSplit();
-        return coreApp.exec();
+        return app.exec();
     } else {
-        // GUI mode
-        QApplication app(argc, argv); // Upgrade to QApplication for GUI
+        // GUI mode: Create QApplication
+        QApplication app(argc, argv);
         qmlRegisterType<MainWindow>("BinarySplitter", 1, 0, "MainWindow");
         MainWindow mainWindow;
         QQmlApplicationEngine engine;
         engine.rootContext()->setContextProperty("mainWindow", &mainWindow);
         engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
         if (engine.rootObjects().isEmpty()) {
-            return -1;
+            return -1; // Exit if QML fails to load
         }
         return app.exec();
     }
