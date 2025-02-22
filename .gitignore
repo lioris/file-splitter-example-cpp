@@ -130,3 +130,4 @@ Makefile*
 
 # VS Code (optional, if used)
 .vscode/
+*.user

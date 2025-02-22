@@ -1,0 +1,2 @@
+1. add script to collect dlls and create installer 
+ 
