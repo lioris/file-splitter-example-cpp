@@ -8,6 +8,10 @@
 #include <QTextStream>
 #include <QFileInfo>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 int main(int argc, char *argv[]) {
     // Step 1: Manually check for --cli and --help
     bool isCli = false;
@@ -15,13 +19,27 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; ++i) {
         if (qstrcmp(argv[i], "--cli") == 0) {
             isCli = true;
-        } else if (qstrcmp(argv[i], "--help") == 0 || qstrcmp(argv[i], "-h") == 0) {
+        }
+        if (qstrcmp(argv[i], "--help") == 0 || qstrcmp(argv[i], "-h") == 0) {
             showHelp = true;
+            break; // Exit loop once help is detected
         }
     }
 
     // Step 2: Show help and exit if requested
     if (showHelp) {
+#ifdef Q_OS_WIN
+        // Ensure a console is available for help output on Windows
+        if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
+            AllocConsole();
+        }
+        FILE *dummy;
+        if (freopen_s(&dummy, "CONOUT$", "w", stdout) != 0) {
+            return 1; // Exit if console redirection fails
+        }
+#else \
+    // On Unix-like systems, console is already available via shell
+#endif
         QTextStream out(stdout);
         out << "Binary File Splitter\n"
             << "Splits large binary files into smaller chunks based on bulk size or frame size.\n\n"
@@ -41,12 +59,26 @@ int main(int argc, char *argv[]) {
             << "  --auto-detect               Auto-detect frame size using sync word\n"
             << "  --sync-word <hex>           Sync word in hex for auto-detection (default: 4711)\n"
             << "  --help, -h                  Show this help message\n";
-        return 0;
+        out.flush();
+#ifdef Q_OS_WIN
+        FreeConsole(); // Clean up console after help
+#endif
+        return 0; // Exit successfully
     }
 
     // Step 3: Create the appropriate application object
     if (isCli) {
         // CLI mode
+#ifdef Q_OS_WIN
+        // Allocate a console for CLI mode
+        if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
+            AllocConsole();
+        }
+        FILE *dummy;
+        if (freopen_s(&dummy, "CONOUT$", "w", stdout) != 0 || freopen_s(&dummy, "CONOUT$", "w", stderr) != 0) {
+            return 1; // Exit if console redirection fails
+        }
+#endif
         QCoreApplication app(argc, argv);
 
         // Step 4: Use QCommandLineParser after app creation
@@ -110,9 +142,13 @@ int main(int argc, char *argv[]) {
         });
 
         cli.startSplit();
-        return app.exec();
+        int result = app.exec();
+#ifdef Q_OS_WIN
+        FreeConsole(); // Clean up console after CLI mode
+#endif
+        return result;
     } else {
-        // GUI mode
+        // GUI mode - No console allocation
         QApplication app(argc, argv);
         qmlRegisterType<MainWindow>("BinarySplitter", 1, 0, "MainWindow");
         MainWindow mainWindow;
