@@ -2,7 +2,10 @@
 #define MAINWINDOW_H
 
 #include <QObject>
+#include <QString>
 #include "binarysplittercore.h"
+
+class QThread;
 
 class MainWindow : public QObject {
     Q_OBJECT
@@ -37,9 +40,9 @@ public slots:
     void setOutputPrefix(const QString &prefix);
     void setAutoDetect(bool detect);
     void setSyncWord(const QString &word);
-    Q_INVOKABLE void startSplit();
-    Q_INVOKABLE void stopSplit();
-    Q_INVOKABLE void browseFile();
+    void startSplit();
+    void stopSplit();
+    void browseFile();
 
 signals:
     void inputFileChanged();

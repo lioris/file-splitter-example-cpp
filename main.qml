@@ -102,7 +102,7 @@ ApplicationWindow {
             }
             Button {
                 text: "Stop"
-                enabled: mainWindow.progress > 0 && mainWindow.progress < 100
+                enabled: mainWindow.isRunning
                 onClicked: mainWindow.stopSplit()
             }
         }

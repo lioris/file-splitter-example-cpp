@@ -2,6 +2,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QDir>
+#include <QCoreApplication>  // For processEvents()
 
 BinarySplitterCore::BinarySplitterCore(QObject *parent) : QObject(parent), m_stopFlag(false) {}
 
@@ -113,6 +114,8 @@ void BinarySplitterCore::splitBinaryFile(const QString &inputFilePath, double bu
                 }
             }
         }
+
+        QCoreApplication::processEvents(); // Process events to handle stopOperation
     }
 
     if (outFile) {
@@ -125,4 +128,8 @@ void BinarySplitterCore::splitBinaryFile(const QString &inputFilePath, double bu
 void BinarySplitterCore::stopOperation() {
     m_stopFlag = true;
     emit stopRequested();
+}
+
+void BinarySplitterCore::resetStopFlag() {
+    m_stopFlag = false; // Reset the stop flag for a new operation
 }

@@ -23,6 +23,7 @@ signals:
 
 public slots:
     void stopOperation();
+    void resetStopFlag();  // New slot to reset the stop flag
 
 private:
     bool m_stopFlag;

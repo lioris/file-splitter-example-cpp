@@ -92,6 +92,9 @@ void MainWindow::startSplit() {
         return;
     }
 
+    // Reset the stop flag before starting a new operation
+    QMetaObject::invokeMethod(m_splitter, "resetStopFlag", Qt::QueuedConnection);
+
     int frameSizeToUse;
     if (m_autoDetect) {
         bool ok = QMetaObject::invokeMethod(m_splitter, "detectFrameSize",
